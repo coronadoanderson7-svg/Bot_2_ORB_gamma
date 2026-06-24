@@ -7,6 +7,7 @@ from decimal import Decimal, ROUND_DOWN, ROUND_HALF_EVEN
 import queue
 from ibapi.contract import Contract
 from ibapi.order import Order
+from ibapi.tag_value import TagValue
 from typing import Optional, Tuple
 
 from ib_client.connector import IBConnector
@@ -32,8 +33,8 @@ class OrderManager:
         self.ib_connector = ib_connector
         self.contract_info = APP_CONFIG.instrument
         self.trade_management = APP_CONFIG.trade_management
-        self.order_defaults = APP_CONFIG.trade_execution.order_defaults
         self.total_quantity = APP_CONFIG.trade_execution.total_quantity
+        self.trade_execution = APP_CONFIG.trade_execution
         self.active_positions = {} # parent_order_id -> {stop_loss_order_id, take_profit_order_id, contract, min_tick}
         
     def _make_trade_decision(self, signal_type: SignalType, spot_price: float, strike_price: float) -> Optional[str]:
@@ -315,6 +316,23 @@ class OrderManager:
         parent_order.transmit = False # DO NOT transmit parent alone
         parent_order.eTradeOnly = False
         parent_order.firmQuoteOnly = False
+
+        # --- Adaptive Algo Logic ---
+        if self.trade_execution.adaptive_entry.enabled:
+            logger.info("Using Adaptive Algo for entry.")
+            # Calculate the price cap based on the fetched price and config percentage
+            price_cap = option_price * (1 + self.trade_execution.adaptive_entry.price_cap_pct / 100)
+            parent_order.lmtPrice = self._round_to_tick_size(price_cap, entry_tick_size)
+            
+            parent_order.algoStrategy = "Adaptive"
+            parent_order.algoParams = []
+            parent_order.algoParams.append(TagValue("adaptivePriority", self.trade_execution.adaptive_entry.priority))
+            logger.info(f"Adaptive Algo configured with priority '{self.trade_execution.adaptive_entry.priority}' and price cap {parent_order.lmtPrice}")
+        else:
+            # Fallback to the previous simple LMT order logic
+            logger.info("Using standard LMT order for entry.")
+            parent_order.lmtPrice = self._round_to_tick_size(option_price, entry_tick_size)
+
 
         # 8. Create Bracket Orders
         bracket = self._create_bracket_orders(

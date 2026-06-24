@@ -1,0 +1,182 @@
+2026-06-24 07:11:09.046 | INFO     | core.logging_setup:<module>:42 - Logger initialized successfully.
+2026-06-24 07:11:24.282 | INFO     | __main__:main:16 - Starting the trading bot application.
+2026-06-24 07:11:24.283 | INFO     | core.engine:__init__:40 - Initializing Trading Engine...
+2026-06-24 07:11:24.284 | INFO     | ib_client.client:__init__:27 - IBClient initialized.
+2026-06-24 07:11:24.285 | INFO     | ib_client.connector:__init__:59 - IBConnector initialized.
+2026-06-24 07:11:24.296 | INFO     | core.engine:__init__:65 - Engine initialized. Trading Mode: PAPER, Ticker: SPX
+2026-06-24 07:11:24.297 | INFO     | core.engine:run:79 - Starting engine event loop...
+2026-06-24 07:11:24.299 | INFO     | core.engine:_process_state:96 - --- Processing State: CONNECTING ---
+2026-06-24 07:11:24.300 | INFO     | ib_client.connector:connect:73 - Connecting to IB TWS/Gateway at 127.0.0.1:4002 with ClientID 1...
+2026-06-24 07:11:24.896 | INFO     | ib_client.connector:connect:82 - Connection thread started.
+2026-06-24 07:11:24.898 | INFO     | ib_client.connector:_wait_for_connection:96 - Waiting for connection to be established...
+2026-06-24 07:11:25.954 | INFO     | ib_client.wrapper:nextValidId:107 - Successfully connected to IB. Next valid Order ID: 5211
+2026-06-24 07:11:25.955 | INFO     | ib_client.connector:_wait_for_connection:103 - Connection established successfully. Next Request ID seed: 5211
+2026-06-24 07:11:25.958 | INFO     | core.engine:_state_connect:121 - OrderManager initialized.
+2026-06-24 07:11:26.072 | INFO     | ib_client.wrapper:error:78 - IB Info: ReqId: -1, Code: 2104, Msg: Market data farm connection is OK:usfarm
+2026-06-24 07:11:26.075 | INFO     | ib_client.wrapper:error:78 - IB Info: ReqId: -1, Code: 2106, Msg: HMDS data farm connection is OK:ushmds
+2026-06-24 07:11:26.083 | INFO     | ib_client.wrapper:error:78 - IB Info: ReqId: -1, Code: 2158, Msg: Sec-def data farm connection is OK:secdefil
+2026-06-24 07:11:26.959 | INFO     | core.engine:_process_state:96 - --- Processing State: GETTING_OPENING_RANGE ---
+2026-06-24 07:11:26.960 | INFO     | core.engine:_state_get_opening_range:131 - America/New_York ***********************
+2026-06-24 07:11:34.418 | INFO     | core.engine:_state_get_opening_range:166 - Requesting historical data for opening range. End: 20260624 09:45:00 America/New_York (America/New_York), Duration: 900 S
+2026-06-24 07:11:34.420 | INFO     | ib_client.connector:req_historical_data:335 - Requesting historical data. ReqId: 5211, Symbol: SPX
+2026-06-24 07:11:40.026 | INFO     | core.engine:_state_get_opening_range:190 - Received 15 bars for opening range analysis.
+2026-06-24 07:11:40.028 | INFO     | core.engine:_state_get_opening_range:202 - Setting opening range strategy time window: 2026-06-24 09:30:00-04:00 to 2026-06-24 09:45:00-04:00
+2026-06-24 07:11:40.050 | INFO     | core.engine:_state_get_opening_range:223 - Opening Range calculated: High=7401.85, Low=7370.45
+2026-06-24 07:11:41.052 | INFO     | core.engine:_process_state:96 - --- Processing State: MONITORING_BREAKOUT ---
+2026-06-24 07:11:41.052 | INFO     | core.engine:_state_monitor_for_breakout:236 - Requesting 5-second real-time bars to monitor for breakout. (ReqId: 5212)
+2026-06-24 07:11:41.054 | INFO     | ib_client.connector:req_real_time_bars:342 - Requesting real-time bars. ReqId: 5212, Symbol: SPX
+2026-06-24 07:50:06.241 | INFO     | core.engine:_state_monitor_for_breakout:251 - !!! BREAKOUT DETECTED: BUY !!!
+2026-06-24 07:50:06.279 | INFO     | ib_client.connector:cancel_real_time_bars:349 - Cancelling real-time bars. ReqId: 5212
+2026-06-24 07:50:07.299 | INFO     | core.engine:_process_state:96 - --- Processing State: ANALYZING_GEX ---
+2026-06-24 07:50:07.301 | INFO     | core.engine:_state_analyze_gex:270 - Performing GEX analysis...
+2026-06-24 07:50:07.357 | INFO     | ib_client.connector:req_contract_details:328 - Requesting contract details. ReqId: 5213, Symbol: SPX
+2026-06-24 07:50:08.452 | INFO     | ib_client.connector:resolve_contract_details:311 - Resolved contract for SPX. ConId: 416904
+2026-06-24 07:50:08.462 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5214, Symbol: SPX
+2026-06-24 07:50:09.030 | ERROR    | ib_client.wrapper:error:87 - IB Error: ReqId: -1, Code: 2119, Msg: Market data farm is connecting:usfarm.nj
+2026-06-24 07:50:10.033 | INFO     | ib_client.wrapper:error:78 - IB Info: ReqId: -1, Code: 2104, Msg: Market data farm connection is OK:usfarm.nj
+2026-06-24 07:50:10.360 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5214
+2026-06-24 07:50:10.369 | INFO     | ib_client.connector:req_sec_def_opt_params:356 - Requesting option params. ReqId: 5215, Symbol: SPX
+2026-06-24 07:50:12.871 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5216, Symbol: SPX
+2026-06-24 07:50:12.875 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5217, Symbol: SPX
+2026-06-24 07:50:12.880 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5218, Symbol: SPX
+2026-06-24 07:50:12.887 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5219, Symbol: SPX
+2026-06-24 07:50:12.890 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5220, Symbol: SPX
+2026-06-24 07:50:12.894 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5221, Symbol: SPX
+2026-06-24 07:50:12.897 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5222, Symbol: SPX
+2026-06-24 07:50:12.906 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5223, Symbol: SPX
+2026-06-24 07:50:12.913 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5224, Symbol: SPX
+2026-06-24 07:50:12.920 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5225, Symbol: SPX
+2026-06-24 07:50:12.924 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5226, Symbol: SPX
+2026-06-24 07:50:12.927 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5227, Symbol: SPX
+2026-06-24 07:50:12.932 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5228, Symbol: SPX
+2026-06-24 07:50:12.938 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5229, Symbol: SPX
+2026-06-24 07:50:12.941 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5230, Symbol: SPX
+2026-06-24 07:50:12.943 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5231, Symbol: SPX
+2026-06-24 07:50:12.946 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5232, Symbol: SPX
+2026-06-24 07:50:12.953 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5233, Symbol: SPX
+2026-06-24 07:50:12.957 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5234, Symbol: SPX
+2026-06-24 07:50:12.963 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5235, Symbol: SPX
+2026-06-24 07:50:14.611 | ERROR    | ib_client.wrapper:error:87 - IB Error: ReqId: -1, Code: 2119, Msg: Market data farm is connecting:usopt
+2026-06-24 07:50:15.091 | ERROR    | ib_client.wrapper:error:87 - IB Error: ReqId: -1, Code: 2119, Msg: Market data farm is connecting:usopt
+2026-06-24 07:50:15.139 | INFO     | ib_client.wrapper:error:78 - IB Info: ReqId: -1, Code: 2104, Msg: Market data farm connection is OK:usopt
+2026-06-24 07:50:22.248 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5216
+2026-06-24 07:50:22.252 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5217
+2026-06-24 07:50:22.256 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5218
+2026-06-24 07:50:22.264 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5219
+2026-06-24 07:50:22.270 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5220
+2026-06-24 07:50:22.275 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5221
+2026-06-24 07:50:22.278 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5222
+2026-06-24 07:50:22.283 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5223
+2026-06-24 07:50:22.293 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5224
+2026-06-24 07:50:22.299 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5225
+2026-06-24 07:50:22.302 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5226
+2026-06-24 07:50:22.307 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5227
+2026-06-24 07:50:22.311 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5228
+2026-06-24 07:50:22.316 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5229
+2026-06-24 07:50:22.339 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5230
+2026-06-24 07:50:22.350 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5231
+2026-06-24 07:50:22.355 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5232
+2026-06-24 07:50:22.362 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5233
+2026-06-24 07:50:22.375 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5234
+2026-06-24 07:50:22.381 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5235
+2026-06-24 07:50:23.468 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5236, Symbol: SPX
+2026-06-24 07:50:23.476 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5237, Symbol: SPX
+2026-06-24 07:50:23.484 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5238, Symbol: SPX
+2026-06-24 07:50:23.487 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5239, Symbol: SPX
+2026-06-24 07:50:23.543 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5240, Symbol: SPX
+2026-06-24 07:50:23.601 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5241, Symbol: SPX
+2026-06-24 07:50:23.656 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5242, Symbol: SPX
+2026-06-24 07:50:23.707 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5243, Symbol: SPX
+2026-06-24 07:50:23.738 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5244, Symbol: SPX
+2026-06-24 07:50:23.825 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5245, Symbol: SPX
+2026-06-24 07:50:23.869 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5246, Symbol: SPX
+2026-06-24 07:50:24.006 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5247, Symbol: SPX
+2026-06-24 07:50:24.020 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5248, Symbol: SPX
+2026-06-24 07:50:24.027 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5249, Symbol: SPX
+2026-06-24 07:50:24.036 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5250, Symbol: SPX
+2026-06-24 07:50:24.055 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5251, Symbol: SPX
+2026-06-24 07:50:24.067 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5252, Symbol: SPX
+2026-06-24 07:50:24.086 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5253, Symbol: SPX
+2026-06-24 07:50:24.104 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5254, Symbol: SPX
+2026-06-24 07:50:24.119 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5255, Symbol: SPX
+2026-06-24 07:50:39.176 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5236
+2026-06-24 07:50:39.193 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5237
+2026-06-24 07:50:39.232 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5238
+2026-06-24 07:50:39.304 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5239
+2026-06-24 07:50:39.610 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5240
+2026-06-24 07:50:39.624 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5241
+2026-06-24 07:50:39.679 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5242
+2026-06-24 07:50:39.685 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5243
+2026-06-24 07:50:39.691 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5244
+2026-06-24 07:50:39.714 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5245
+2026-06-24 07:50:39.722 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5246
+2026-06-24 07:50:39.725 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5247
+2026-06-24 07:50:39.754 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5248
+2026-06-24 07:50:39.785 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5249
+2026-06-24 07:50:39.810 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5250
+2026-06-24 07:50:39.832 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5251
+2026-06-24 07:50:39.838 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5252
+2026-06-24 07:50:39.854 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5253
+2026-06-24 07:50:39.871 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5254
+2026-06-24 07:50:39.882 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5255
+2026-06-24 07:50:40.896 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5256, Symbol: SPX
+2026-06-24 07:50:40.905 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5257, Symbol: SPX
+2026-06-24 07:50:40.914 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5258, Symbol: SPX
+2026-06-24 07:50:40.918 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5259, Symbol: SPX
+2026-06-24 07:50:40.930 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5260, Symbol: SPX
+2026-06-24 07:50:40.950 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5261, Symbol: SPX
+2026-06-24 07:50:40.958 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5262, Symbol: SPX
+2026-06-24 07:50:40.965 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5263, Symbol: SPX
+2026-06-24 07:50:40.969 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5264, Symbol: SPX
+2026-06-24 07:50:40.972 | INFO     | ib_client.connector:req_market_data:363 - Requesting market data. ReqId: 5265, Symbol: SPX
+2026-06-24 07:50:56.360 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5256
+2026-06-24 07:50:56.417 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5257
+2026-06-24 07:50:56.457 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5258
+2026-06-24 07:50:56.588 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5259
+2026-06-24 07:50:56.600 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5260
+2026-06-24 07:50:56.618 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5261
+2026-06-24 07:50:56.671 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5262
+2026-06-24 07:50:56.717 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5263
+2026-06-24 07:50:56.735 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5264
+2026-06-24 07:50:56.815 | INFO     | ib_client.connector:cancel_market_data:370 - Cancelling market data. ReqId: 5265
+2026-06-24 07:50:56.981 | INFO     | core.engine:_state_analyze_gex:283 - Max Gamma Strike identified: 7450.0 for expiration 20260624
+2026-06-24 07:50:58.022 | INFO     | core.engine:_process_state:96 - --- Processing State: PENDING_TRADE_EXECUTION ---
+2026-06-24 07:50:58.035 | INFO     | core.engine:_state_execute_trade:301 - Executing trade...
+2026-06-24 07:50:58.063 | INFO     | ib_client.connector:req_contract_details:328 - Requesting contract details. ReqId: 5266, Symbol: SPX
+2026-06-24 07:50:58.992 | INFO     | ib_client.connector:resolve_contract_details:311 - Resolved contract for SPX. ConId: 885532869
+2026-06-24 07:50:58.999 | INFO     | ib_client.client:fetch_market_price:44 - Requesting market price for SPX (ReqId: 5267)
+2026-06-24 07:51:00.141 | INFO     | ib_client.connector:fetch_market_price:269 - Successfully fetched market price snapshot for SPX: {'bid': 18.9, 'bid_size': 6, 'ask': 19.0, 'ask_size': 21, 'last': 18.0, 'last_size': 1}
+2026-06-24 07:51:00.320 | INFO     | ib_client.connector:place_order:413 - Placing OrderId: 5268, Action: BUY, Qty: 1, Symbol: SPX, SecType: OPT, Strike: 7410.0, Right: C, Expiry: 20260624, OrderType: LMT, TIF: DAY, LmtPrice: 19.0
+2026-06-24 07:51:00.358 | INFO     | ib_client.connector:place_order:413 - Placing OrderId: 5269, Action: SELL, Qty: 1, Symbol: SPX, SecType: OPT, Strike: 7410.0, Right: C, Expiry: 20260624, OrderType: LMT, TIF: GTC, LmtPrice: 22.8, ParentId: 5268
+2026-06-24 07:51:00.375 | INFO     | ib_client.connector:place_order:413 - Placing OrderId: 5270, Action: SELL, Qty: 1, Symbol: SPX, SecType: OPT, Strike: 7410.0, Right: C, Expiry: 20260624, OrderType: STP, TIF: GTC, AuxPrice: 9.5, ParentId: 5268
+2026-06-24 07:51:00.390 | INFO     | core.engine:_state_execute_trade:318 - Trade order has been submitted. Transitioning to trade management.
+2026-06-24 07:51:01.392 | INFO     | core.engine:_process_state:96 - --- Processing State: MANAGING_TRADE ---
+2026-06-24 07:51:01.395 | INFO     | core.engine:_state_manage_trade:325 - Managing open trade...
+2026-06-24 07:51:02.397 | INFO     | core.engine:_process_state:96 - --- Processing State: MANAGING_TRADE ---
+2026-06-24 07:51:02.399 | INFO     | core.engine:_state_manage_trade:325 - Managing open trade...
+2026-06-24 07:51:03.401 | INFO     | core.engine:_process_state:96 - --- Processing State: MANAGING_TRADE ---
+2026-06-24 07:51:03.401 | INFO     | core.engine:_state_manage_trade:325 - Managing open trade...
+2026-06-24 07:51:04.413 | INFO     | core.engine:_process_state:96 - --- Processing State: MANAGING_TRADE ---
+2026-06-24 07:51:04.414 | INFO     | core.engine:_state_manage_trade:325 - Managing open trade...
+2026-06-24 07:51:05.361 | INFO     | ib_client.wrapper:orderStatus:271 - Order Status Update: {'orderId': 5269, 'status': 'PreSubmitted', 'filled': Decimal('0'), 'remaining': Decimal('1'), 'avgFillPrice': 0.0, 'parentId': 5268}
+2026-06-24 07:51:05.382 | INFO     | ib_client.wrapper:orderStatus:271 - Order Status Update: {'orderId': 5269, 'status': 'PreSubmitted', 'filled': Decimal('0'), 'remaining': Decimal('1'), 'avgFillPrice': 0.0, 'parentId': 5268}
+2026-06-24 07:51:05.395 | INFO     | ib_client.wrapper:orderStatus:271 - Order Status Update: {'orderId': 5270, 'status': 'PreSubmitted', 'filled': Decimal('0'), 'remaining': Decimal('1'), 'avgFillPrice': 0.0, 'parentId': 5268}
+2026-06-24 07:51:05.417 | INFO     | core.engine:_process_state:96 - --- Processing State: MANAGING_TRADE ---
+2026-06-24 07:51:05.421 | INFO     | core.engine:_state_manage_trade:325 - Managing open trade...
+2026-06-24 07:51:05.491 | INFO     | ib_client.wrapper:orderStatus:271 - Order Status Update: {'orderId': 5268, 'status': 'PendingCancel', 'filled': Decimal('0'), 'remaining': Decimal('1'), 'avgFillPrice': 0.0, 'parentId': 0}
+2026-06-24 07:51:05.552 | INFO     | ib_client.wrapper:orderStatus:271 - Order Status Update: {'orderId': 5268, 'status': 'PendingCancel', 'filled': Decimal('0'), 'remaining': Decimal('1'), 'avgFillPrice': 0.0, 'parentId': 0}
+2026-06-24 07:51:05.848 | INFO     | ib_client.wrapper:orderStatus:271 - Order Status Update: {'orderId': 5268, 'status': 'Cancelled', 'filled': Decimal('0'), 'remaining': Decimal('1'), 'avgFillPrice': 0.0, 'parentId': 0}
+2026-06-24 07:51:05.877 | ERROR    | ib_client.wrapper:error:87 - IB Error: ReqId: 5268, Code: 202, Msg: Order Canceled - reason:We cannot accept an order at a limit price at or more aggressive than 18. Please submit your order using a <br>limit price that is closer to the current market price of 17.2.
+2026-06-24 07:51:05.931 | INFO     | ib_client.wrapper:orderStatus:271 - Order Status Update: {'orderId': 5269, 'status': 'Cancelled', 'filled': Decimal('0'), 'remaining': Decimal('1'), 'avgFillPrice': 0.0, 'parentId': 5268}
+2026-06-24 07:51:05.950 | ERROR    | ib_client.wrapper:error:87 - IB Error: ReqId: 5269, Code: 202, Msg: Order Canceled - reason:
+2026-06-24 07:51:05.971 | INFO     | ib_client.wrapper:orderStatus:271 - Order Status Update: {'orderId': 5270, 'status': 'Cancelled', 'filled': Decimal('0'), 'remaining': Decimal('1'), 'avgFillPrice': 0.0, 'parentId': 5268}
+2026-06-24 07:51:05.987 | ERROR    | ib_client.wrapper:error:87 - IB Error: ReqId: 5270, Code: 202, Msg: Order Canceled - reason:
+2026-06-24 07:51:06.481 | INFO     | core.engine:_process_state:96 - --- Processing State: MANAGING_TRADE ---
+2026-06-24 07:51:06.481 | INFO     | core.engine:_state_manage_trade:325 - Managing open trade...
+2026-06-24 07:51:06.484 | INFO     | core.engine:_state_manage_trade:338 - Position is closed and no pending orders. Shutting down.
+2026-06-24 07:51:07.485 | INFO     | core.engine:shutdown:346 - Shutting down trading engine...
+2026-06-24 07:51:07.494 | INFO     | ib_client.connector:disconnect:120 - Disconnecting from IB TWS/Gateway...
+2026-06-24 07:51:07.516 | WARNING  | ib_client.wrapper:connectionClosed:97 - Connection to IB TWS/Gateway lost. Notifying connector.
+2026-06-24 07:51:07.532 | INFO     | ib_client.connector:disconnect:126 - Waiting for connection thread to terminate.
+2026-06-24 07:51:07.658 | INFO     | ib_client.connector:disconnect:131 - Disconnected successfully.
+2026-06-24 07:51:07.664 | INFO     | core.engine:_clear_pycache:364 - Clearing Python cache...

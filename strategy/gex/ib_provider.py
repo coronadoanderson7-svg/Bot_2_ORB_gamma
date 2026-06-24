@@ -2,6 +2,8 @@
 import logging
 import math
 import time
+import os
+import csv
 from typing import TYPE_CHECKING, Optional, List, Tuple, Dict
 from ibapi.contract import Contract
 from queue import Empty
@@ -249,9 +251,9 @@ class IBProvider(BaseGexProvider):
         for contract in contracts:
             req_id = ib_connector.get_next_request_id()
             req_id_map[req_id] = {"strike": contract.strike, "right": contract.right, "contract": contract}
-            data_aggregator[req_id] = {"gamma": None, "oi": None}
-            # Request greeks (104) and open interest (101) via a streaming request
-            ib_connector.req_market_data(req_id, contract, "101,104", False, False)
+            data_aggregator[req_id] = {"gamma": None, "oi": None, "volume": None}
+            # Request greeks (104), open interest (101), and volume (100) via a streaming request
+            ib_connector.req_market_data(req_id, contract, "100,101,104", False, False)
         
         return req_id_map, data_aggregator
 
@@ -287,7 +289,9 @@ class IBProvider(BaseGexProvider):
                         missing_fields.append("Gamma")
                     if data["oi"] is None:
                         missing_fields.append("OI")
-                    logger.warning(f"Incomplete ReqId {req_id} ({info['strike']} {info['right']}): Missing {', '.join(missing_fields)}. (Gamma={data['gamma']}, OI={data['oi']})")
+                    if data["volume"] is None:
+                        missing_fields.append("Volume")
+                    logger.warning(f"Incomplete ReqId {req_id} ({info['strike']} {info['right']}): Missing {', '.join(missing_fields)}. (Gamma={data['gamma']}, OI={data['oi']}, Volume={data['volume']})")
                 break
 
             # Check for system errors / connection status
@@ -315,14 +319,25 @@ class IBProvider(BaseGexProvider):
                 pass  # Queue is empty, continue
 
             try:
-                # Check for open interest from the queue (non-blocking)
+                # Check for open interest and volume from the queue (non-blocking)
                 oi_req_id, tick_type, size = ib_connector.wrapper.tick_size_queue.get_nowait()
-                if oi_req_id in data_aggregator and data_aggregator[oi_req_id]["oi"] is None:
-                    # Strict matching to avoid race condition where IB sends 0 for the wrong right
+                if oi_req_id in data_aggregator:
                     contract_right = req_id_map[oi_req_id]["right"]
-                    if (contract_right == "C" and tick_type == 27) or \
-                       (contract_right == "P" and tick_type == 28):
-                        data_aggregator[oi_req_id]["oi"] = size
+                    # Check for Open Interest
+                    if data_aggregator[oi_req_id]["oi"] is None:
+                        # Strict matching to avoid race condition where IB sends 0 for the wrong right
+                        if (contract_right == "C" and tick_type == 27) or \
+                           (contract_right == "P" and tick_type == 28):
+                            data_aggregator[oi_req_id]["oi"] = size
+                    # Check for Volume
+                    if data_aggregator[oi_req_id]["volume"] is None:
+                        # Prioritize Tick Type 8 (Volume) as it is more reliable for SPX.
+                        if tick_type == 8:
+                            data_aggregator[oi_req_id]["volume"] = size
+                        # Fallback to specific Call/Put volume ticks (29, 30) if they arrive.
+                        elif (contract_right == "C" and tick_type == 29) or \
+                             (contract_right == "P" and tick_type == 30):
+                            data_aggregator[oi_req_id]["volume"] = size
             except Empty:
                 pass  # Queue is empty, continue
             
@@ -330,7 +345,7 @@ class IBProvider(BaseGexProvider):
             completed_this_loop = set()
             for req_id in pending_req_ids:
                 data = data_aggregator[req_id]
-                if data["gamma"] is not None and data["oi"] is not None:
+                if data["gamma"] is not None and data["oi"] is not None and data["volume"] is not None:
                     completed_this_loop.add(req_id)
                     logger.debug(f"Data collection complete for ReqId {req_id}.")
             
@@ -376,12 +391,13 @@ class IBProvider(BaseGexProvider):
         gex_by_strike = defaultdict(float)
         multiplier = self.config.gex.option_multiplier
         
-        # Data structure for logging table: strike -> {right: {gamma, oi}}
-        table_data = defaultdict(lambda: {"C": {"gamma": None, "oi": None}, "P": {"gamma": None, "oi": None}})
+        # Data structure for logging table: strike -> {right: {gamma, oi, volume}}
+        table_data = defaultdict(lambda: {"C": {"gamma": None, "oi": None, "volume": None}, "P": {"gamma": None, "oi": None, "volume": None}})
 
         for req_id, data in data_aggregator.items():
             gamma = data.get("gamma")
             oi = data.get("oi")
+            volume = data.get("volume")
             
             strike_info = req_id_map.get(req_id)
             if not strike_info:
@@ -393,18 +409,19 @@ class IBProvider(BaseGexProvider):
             # Store raw data for the table
             table_data[strike][right]["gamma"] = gamma
             table_data[strike][right]["oi"] = oi
+            table_data[strike][right]["volume"] = volume
             
             # Ensure data is valid before calculating
-            if gamma is not None and oi is not None and gamma > -1 and oi > -1:
-                # Formula: GEX = gamma * open_interest * 100
-                gex = gamma * oi * multiplier
+            if gamma is not None and oi is not None and volume is not None and gamma > -1 and oi > -1 and volume > -1:
+                # Formula: GEX = gamma * open_interest * 100 * volume
+                gex = gamma * oi * multiplier * volume
                 gex_by_strike[strike] += gex
             else:
-                logger.debug(f"Skipping GEX calc for ReqId {req_id} (Strike: {strike} {right}) due to missing data: Gamma={gamma}, OI={oi}")
+                logger.debug(f"Skipping GEX calc for ReqId {req_id} (Strike: {strike} {right}) due to missing data: Gamma={gamma}, OI={oi}, Volume={volume}")
 
         # Generate and log the table
         log_lines = ["GEX Calculation Data Table:"]
-        header = f"{'Strike':<10} | {'Call OI':<10} | {'Call Gamma':<12} | {'Put OI':<10} | {'Put Gamma':<12} | {'Total GEX':<12}"
+        header = f"{'Strike':<10} | {'Call OI':<10} | {'Call Vol':<10} | {'Call Gamma':<12} | {'Put OI':<10} | {'Put Vol':<10} | {'Put Gamma':<12} | {'Total GEX':<15}"
         log_lines.append(header)
         log_lines.append("-" * len(header))
 
@@ -413,16 +430,61 @@ class IBProvider(BaseGexProvider):
             p_data = table_data[strike]["P"]
             
             c_oi = c_data["oi"] if c_data["oi"] is not None else "N/A"
+            c_vol = c_data["volume"] if c_data["volume"] is not None else "N/A"
             c_gamma = f"{c_data['gamma']:.4f}" if isinstance(c_data["gamma"], (int, float)) else "N/A"
             
             p_oi = p_data["oi"] if p_data["oi"] is not None else "N/A"
+            p_vol = p_data["volume"] if p_data["volume"] is not None else "N/A"
             p_gamma = f"{p_data['gamma']:.4f}" if isinstance(p_data["gamma"], (int, float)) else "N/A"
             
             total_gex = gex_by_strike.get(strike, 0.0)
             
-            log_lines.append(f"{strike:<10.2f} | {c_oi:<10} | {c_gamma:<12} | {p_oi:<10} | {p_gamma:<12} | {total_gex:<12.2f}")
+            log_lines.append(f"{strike:<10.2f} | {c_oi:<10} | {c_vol:<10} | {c_gamma:<12} | {p_oi:<10} | {p_vol:<10} | {p_gamma:<12} | {total_gex:<15.2f}")
 
         # The table is logged at WARNING level to ensure it appears in logs where INFO might be suppressed.
         logger.warning("\n" + "\n".join(log_lines))
 
+        # Save the table to a CSV file
+        self._save_gex_table_to_csv(table_data, gex_by_strike)
+
         return dict(gex_by_strike)
+
+    def _save_gex_table_to_csv(self, table_data: Dict, gex_by_strike: Dict):
+        """Saves the detailed GEX calculation table to a CSV file."""
+        log_dir = r"C:\Users\ander\PythonProjects\Bot_ORB_Gamma\Logs"
+        try:
+            os.makedirs(log_dir, exist_ok=True)
+            
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = os.path.join(log_dir, f"gex_analysis_{timestamp}.csv")
+            
+            header = [
+                "Strike", "Call OI", "Call Vol", "Call Gamma", 
+                "Put OI", "Put Vol", "Put Gamma", "Total GEX"
+            ]
+            
+            with open(filename, 'w', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(header)
+                
+                for strike in sorted(table_data.keys()):
+                    c_data = table_data[strike]["C"]
+                    p_data = table_data[strike]["P"]
+                    
+                    c_oi = c_data.get("oi", "N/A")
+                    c_vol = c_data.get("volume", "N/A")
+                    c_gamma = f'{c_data.get("gamma", 0.0):.4f}' if isinstance(c_data.get("gamma"), (int, float)) else "N/A"
+                    
+                    p_oi = p_data.get("oi", "N/A")
+                    p_vol = p_data.get("volume", "N/A")
+                    p_gamma = f'{p_data.get("gamma", 0.0):.4f}' if isinstance(p_data.get("gamma"), (int, float)) else "N/A"
+                    
+                    total_gex = gex_by_strike.get(strike, 0.0)
+                    
+                    row = [f"{strike:.2f}", c_oi, c_vol, c_gamma, p_oi, p_vol, p_gamma, f"{total_gex:.2f}"]
+                    writer.writerow(row)
+            
+            logger.info(f"GEX analysis table saved to {filename}")
+
+        except IOError as e:
+            logger.error(f"Failed to save GEX analysis CSV: {e}")

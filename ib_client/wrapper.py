@@ -12,6 +12,7 @@ class then consumes these messages from the other side of the queue.
 
 from ibapi.wrapper import EWrapper
 from queue import Queue
+from datetime import datetime
 from typing import TYPE_CHECKING
 from core.logging_setup import logger
 

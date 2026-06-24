@@ -146,26 +146,19 @@ Objective: create a third stage where we will get the gamma exposure in three di
 
         ---
 
-        ### Step 3: Aggregation (Absolute Value Summation)
+    ### Step 3: Aggregation (Total GEX Calculation)
 
         **Objective:** To determine the total magnitude of gamma risk at each strike, irrespective of whether it comes from long or short positions.
 
         1.  **Logic:** For every unique strike `K` returned by the API, the system calculates the **Total Gamma Exposure** by summing the absolute values of the long and short gamma.
-        The `total_gamma` field from the API response is ignored, as it represents a net sum, not the sum of magnitudes.
 
             `Total_GEX_K = ABS(Short_Gamma_K) + ABS(Long_Gamma_K)`
 
         2.  **Process:** The system will iterate through the `data` array from the API response. 
         For each strike, it will perform the absolute summation and store the result in a dictionary where the key is the strike price and the value is its calculated `Total_GEX`.
 
-            **Example Resulting Structure:**
-            ```
-            {
-            5000: 2222222.21,  // abs(-987654.32) + abs(1234567.89)
-            5010: 2150000.00,  // abs(-1050000.00) + abs(1100000.00)
-            ...
-            }
-            ```
+        *(Note: The `total_gamma` field from the API response is ignored, as the bot's logic requires summing the magnitudes, not using the net value).*
+
 
         ---
 
@@ -175,10 +168,8 @@ Objective: create a third stage where we will get the gamma exposure in three di
 
         1.  **Operation:** The system will perform a "max" search on the aggregated GEX results from Step 3. It will identify the key (strike) that corresponds to the largest value (Total GEX).
         2.  **Variable Assignment:** The strike price with the highest `Total_GEX` value is stored in a variable for use in Stage 4.
-            *   **Variable Name:** `MAX_GAMMA_STRIKE`
 
-        **Final Output:** The `MAX_GAMMA_STRIKE` variable, holding a single float value (e.g., `5000.0`), is returned by the process. 
-        This value is now ready to be consumed by the `Trade Execution` stage.
+        **Final Output:** The provider returns a tuple containing the `max_gamma_strike` (float), the `expiration_date` (string in 'YYYYMMDD' format), and a list of the `strikes` that were analyzed. This complete dataset is then consumed by the `Trade Execution` stage.
 
 
     Option 2: Build a Parallelized "GEX Microservice" - GEX Process type = 1 
@@ -213,6 +204,7 @@ Objective: create a third stage where we will get the gamma exposure in three di
         ```
 
         - It will be responsible for retrieving the singleton instance of the `IBConnector` from the `ib_client.connector` module to enable interaction with the TWS/Gateway API.
+        - The `get_max_gamma_strike` method will accept the `ib_connector` instance as an argument.
 
         ### 3.2. Main Method (`get_max_gamma_strike`)
 
@@ -220,33 +212,32 @@ Objective: create a third stage where we will get the gamma exposure in three di
 
         ```python
         # Conceptual signature
-        async def get_max_gamma_strike(self, symbol: str) -> Optional[float]:
+        def get_max_gamma_strike(self, ticker: str, ib_connector: "IBConnector") -> tuple[float, str, list[float]]:
             # ...
         ```
 
         **Functional Requirements:**
 
-        1.  **Asynchronous Execution:** The method must be `async` to perform non-blocking I/O operations for data fetching.
-        2.  **Fetch Option Chain:**
+        1.  **Fetch Option Chain:**
             - Use the `IBConnector` to fetch the option chain for the given underlying `symbol`.
             - The fetch request must be filtered based on parameters from `config.yaml`:
                 - `gex.days_to_expiration`: This will control how far out the expiration dates for the options contracts are.
                 - `gex.strikes_quantity`: This will control how many strikes around the money are fetched.
             - This includes fetching all available expiration dates and strikes for both calls and puts within the defined filters.
-        3.  **Batch Market Data Request:**
+        2.  **Batch Market Data Request:**
             - To ensure efficiency, the provider must request model greeks (specifically Gamma) for all relevant option contracts in a single, batched/concurrent request. It must not loop and request data for each contract sequentially.
         4.  **Calculate Gamma Exposure (GEX):**
             - For each strike price, calculate the total GEX.
-            - The GEX for a single option contract is: `GEX = gamma * open_interest * 100`.
+            - The GEX for a single option contract is: `GEX = gamma * open_interest * 100 * option_volume`.
             - The total GEX for a strike is the sum of the GEX of all contracts at that strike.
             - **Calculation Logic:** As per the provided analysis, the GEX contribution from both call and put options should be aggregated to find the total magnitude. The specified logic is `call_gex + put_gex`. The implementation must sum the calculated GEX values for calls and puts at each strike.
         5.  **Identify Max Gamma Strike:**
-            - After calculating the total GEX for every strike price in the chain, identify the strike with the maximum absolute GEX value.
+            - After calculating the total GEX for every strike price in the chain, identify the strike with the maximum GEX value.
         6.  **Return Value:**
-            - Return the strike price (as a `float`) that has the maximum GEX.
-            - Return `None` if the data cannot be fetched or if no options exist for the symbol.
+            - Return a tuple containing the `max_gamma_strike` (float), the `expiration_date` (string), and the list of `strikes` analyzed.
+            - Return `(0.0, "", [])` if the data cannot be fetched or if no options exist for the symbol.
 
-        ## 4. Integration with Provider Factory
+        ## 4. Integration with Provider Factory and Configuration
 
         The `strategy/gex/factory.py` file must be updated to integrate the new provider.
 
@@ -268,18 +259,6 @@ Objective: create a third stage where we will get the gamma exposure in three di
                 return IBProvider(config) 
             elif provider_type == 2:
                 return MassiveDataProvider(config)
-        ...
-        ```
-
-        ## 5. Configuration
-
-        To use this new provider, the `config.yaml` file must be configured as follows. Note the addition of `days_to_expiration` and `strikes_quantity` which are essential for the `IBProvider`.
-
-        ```yaml
-        gex:
-        provider_type: 1
-        days_to_expiration: 30
-        strikes_quantity: 20
         # ... other gex settings
         ```
 
@@ -371,37 +350,23 @@ Objective: create a third stage where we will get the gamma exposure in three di
 
     ---
 
-    ### Step 3: Calculate Short and Long Gamma by Strike
+    ### Step 3: GEX Calculation and Aggregation
 
-    **Objective:** Process the raw data from the API to calculate the total gamma exposure for both calls and puts at each individual strike price.
+    **Objective:** Process the raw data from the API to calculate the total gamma exposure for each individual strike price.
 
-    1.  **Data Grouping:** The system will first parse the API response and group the options by their `strike` price. Each strike will have an associated call and put contract.
-    2.  **Gamma Exposure Calculation:** For each strike `K`, the system calculates the gamma exposure contributed by calls and puts separately.
-        *   **Long Gamma (Calls):** This represents the gamma from long call positions.
-            *   `Long_Gamma_Exposure_K = Call_Gamma_K * Call_Open_Interest_K * 100`
-        *   **Short Gamma (Puts):** This represents the gamma from long put positions. 
-            From a market maker's perspective (who is typically short these options), this contributes to their negative gamma position.
-            *   `Short_Gamma_Exposure_K = Put_Gamma_K * Put_Open_Interest_K * 100`
+    1.  **Gamma Exposure Calculation:** The system iterates through every option contract (both calls and puts) in the API response. For each contract, it calculates its individual gamma exposure.
+        *   `Gamma_Exposure = option.greeks.gamma * option.open_interest * option_multiplier`
 
-        *(Note: The `100` is the standard option multiplier.)*
+        *(Note: The `option_multiplier` is typically 100 and is sourced from `config.yaml`)*
 
-    ---
+    2.  **Aggregation by Strike:** The system aggregates these individual GEX values into a dictionary where the key is the strike price. It sums the `Gamma_Exposure` from both the call and the put at that strike to get the total.
 
-    ### Step 4: Aggregation (Absolute Value Summation)
-
-    **Objective:** To determine the total magnitude of gamma risk at each strike, irrespective of whether it comes from calls or puts.
-
-    1.  **Logic:** For every unique strike price `K` processed in the previous step, the system calculates the **Total Gamma Exposure** by summing the exposure from calls and puts.
-
-        `Total_GEX_K = Long_Gamma_Exposure_K + Short_Gamma_Exposure_K`
-
-    2.  **Process:** The system will iterate through all strikes and compute `Total_GEX_K`. 
-        The result will be stored in a dictionary (or a similar key-value structure) where the key is the strike price and the value is its calculated total GEX.
+        `Total_GEX_at_Strike = Call_GEX + Put_GEX`
 
         **Example Result:**
         ```
         {
-        5000: 22500,  // (Call GEX + Put GEX)
+        5000: 22500,
         5010: 18700,
         5020: 31400,  // High concentration
         ...
@@ -414,13 +379,10 @@ Objective: create a third stage where we will get the gamma exposure in three di
 
     **Objective:** Isolate the single strike price with the highest concentration of total gamma to be used in the trading logic.
 
-    1.  **Operation:** The system will perform a "max" search on the aggregated GEX results from Step 4. It will find the key (strike) corresponding to the largest value (Total GEX).
+    1.  **Operation:** The system will perform a "max" search on the aggregated GEX results. It will find the key (strike) corresponding to the largest value (Total GEX).
     2.  **Variable Assignment:** The strike price with the highest `Total_GEX` value is stored in a variable for use in Stage 4.
-        *   **Variable Name:** `MAX_GAMMA_STRIKE`
 
-    **Final Output:** The `MAX_GAMMA_STRIKE` variable, holding a single float value (e.g., `5020.0`), is returned by the process. 
-        This value is now ready to be consumed by the `Trade Execution` stage to validate trade signals.
-
+    **Final Output:** The provider returns a tuple containing the `max_gamma_strike` (float) and the `expiration_date` (string in 'YYYYMMDD' format). This dataset is then consumed by the `Trade Execution` stage.
 
 
 **Stage 4: Trade Execution**
@@ -486,34 +448,44 @@ This two-part step creates and submits the opening order to IBKR.
 
 ### 6. Post-Trade Management
 
-Once the trade is open and the execution price is confirmed, the focus shifts to managing the position using a server-side bracket order that can be dynamically modified.
+This stage begins immediately after the trade is submitted and is managed by the `Engine` in the `MANAGING_TRADE` state.
 
-*   **Initial Bracket Order Submission:**
-    1.  **Calculate TP/SL Prices:** Based on the actual execution price of the option, calculate the absolute price levels for the Take Profit (TP) and Stop Loss (SL) using percentage values from `config.yaml`.
-    2.  **Structure Bracket Orders:** Create two `Order` objects:
-        *   A `LMT` (Limit) order for the Take Profit price.
-        *   A `STP` (Stop) order for the Stop Loss price.
-    3.  **Submit as Attached Bracket:** Submit these two orders attached to the parent opening order, forming a single, cohesive bracket order on the broker's server. This ensures the position is protected even if the bot disconnects.
+*   **Atomic Bracket Order Submission:**
+    1.  **Calculate TP/SL Prices:** Based on the parent order's limit price, the system calculates the absolute price levels for the Take Profit (TP) and Stop Loss (SL) using percentage values from `config.yaml`. Prices are carefully rounded to the correct tick size for the instrument.
+    2.  **Structure Bracket Orders:** The `OrderManager` creates three `Order` objects:
+        *   **Parent Order:** The main entry order (e.g., LMT), with `Transmit=False`.
+        *   **Take Profit Order:** A `LMT` order with its `parentId` set to the parent's ID, also with `Transmit=False`.
+        *   **Stop Loss Order:** A `STP` order with its `parentId` set to the parent's ID, but with `Transmit=True`.
+    3.  **Atomic Submission:** The three orders are sent to IBKR sequentially. The final order with `Transmit=True` causes the entire group to be submitted atomically, ensuring the position is protected by a server-side bracket from the moment of execution.
 
-*   **Dynamic Trailing Stop Loss via Order Modification:**
-    *   **Monitoring:** The system will monitor the position's status and current market price every 5 seconds.
-    *   **Trailing Condition:** The trailing stop loss logic is activated if the trade meets the following criteria:
-        *   Profit is positive and greater than the `activation_profit_pct` from `config.yaml`.
-        *   Profit is less than the pre-defined `take_profit_pct` from `config.yaml`.
+*   **Milestone-based Trailing Stop Loss:**
+    *   **Monitoring:** Once the parent order is filled, the `Engine` enters the `MANAGING_TRADE` state, periodically calling `OrderManager.manage_open_positions()`.
+    *   **Trailing Condition:** The trailing stop logic is activated when the position's profit crosses a new "milestone" defined by the `activation_profit_pct` from `config.yaml`. For example, if `activation_profit_pct` is 10, milestones are crossed at 10%, 20%, 30%, etc.
     *   **Trailing Action (Order Modification):**
-        *   Instead of cancelling the order, the system will **modify** the existing Stop Loss order.
-        *   This is achieved by submitting a new order request using the **same `orderId`** as the original Stop Loss order, but with an updated stop price.
-        *   The new stop price will be calculated based on the `trail_pct` parameter defined in `config.yaml`.
-        *   This action updates the Stop Loss on the broker's server without affecting the Take Profit order, thus preserving the integrity of the bracket.
+        *   When a new milestone is crossed, the system calculates a new, improved stop-loss price.
+        *   The logic reduces the initial risk (`stop_loss_pct`) by a factor of `trail_pct` for each milestone achieved.
+        *   **Example:** If initial risk is 50% and `trail_pct` is 16%, after the first milestone, the new risk becomes `50% - 16% = 34%`. The new stop price is calculated based on this reduced risk from the entry price.
+        *   The system then **modifies** the existing Stop Loss order by submitting a new order with the **same `orderId`** but the new, higher stop price. This updates the order on the broker's server without affecting the Take Profit order.
+
+*   **Position Closure:**
+    *   The `OrderManager` monitors the order status queue. When it detects that either the Take Profit or Stop Loss order has been filled or cancelled, it considers the position closed.
+    *   The position is removed from active management, and the `Engine` transitions to the `SHUTDOWN` state.
 
 ## Configuration Parameters (`config.yaml`)
 
 The following parameters will be required in `config.yaml` to support this process:
 
 ```yaml
+trade_execution:
+  total_quantity: 1
+  order_defaults:
+    entry_order_type: "LMT"
+    tp_order_type: "LMT"
+    sl_order_type: "STP"
+
 trade_management:
-  take_profit_pct: 0.50  # e.g., 50%
-  stop_loss_pct: 0.20    # e.g., 20%
+  take_profit_pct: 40
+  stop_loss_pct: 50
   trailing_stop:
-    activation_profit_pct: 0.10 # e.g., 10%
-    trail_pct: 0.10             # e.g., Trail by 10%
+    activation_profit_pct: 10
+    trail_pct: 16
