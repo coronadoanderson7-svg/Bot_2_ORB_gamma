@@ -149,7 +149,7 @@ class OrderManager:
         opening_order = Order()
         opening_order.orderId = self.next_order_id
         opening_order.action = "BUY" # We are always buying calls or puts
-        opening_order.orderType = self.order_defaults.entry_order_type
+        opening_order.orderType = self.trade_execution.order_defaults.entry_order_type
         opening_order.lmtPrice = price
         opening_order.totalQuantity = self.total_quantity
         opening_order.eTradeOnly = False
@@ -309,7 +309,7 @@ class OrderManager:
         parent_order = Order()
         parent_order.orderId = parent_order_id
         parent_order.action = "BUY"
-        parent_order.orderType = self.order_defaults.entry_order_type
+        parent_order.orderType = self.trade_execution.order_defaults.entry_order_type
         parent_order.lmtPrice = self._round_to_tick_size(option_price, entry_tick_size) # Use fetched price for limit
         parent_order.totalQuantity = self.total_quantity
         parent_order.tif = "DAY"
@@ -317,22 +317,9 @@ class OrderManager:
         parent_order.eTradeOnly = False
         parent_order.firmQuoteOnly = False
 
-        # --- Adaptive Algo Logic ---
-        if self.trade_execution.adaptive_entry.enabled:
-            logger.info("Using Adaptive Algo for entry.")
-            # Calculate the price cap based on the fetched price and config percentage
-            price_cap = option_price * (1 + self.trade_execution.adaptive_entry.price_cap_pct / 100)
-            parent_order.lmtPrice = self._round_to_tick_size(price_cap, entry_tick_size)
-            
-            parent_order.algoStrategy = "Adaptive"
-            parent_order.algoParams = []
-            parent_order.algoParams.append(TagValue("adaptivePriority", self.trade_execution.adaptive_entry.priority))
-            logger.info(f"Adaptive Algo configured with priority '{self.trade_execution.adaptive_entry.priority}' and price cap {parent_order.lmtPrice}")
-        else:
-            # Fallback to the previous simple LMT order logic
-            logger.info("Using standard LMT order for entry.")
-            parent_order.lmtPrice = self._round_to_tick_size(option_price, entry_tick_size)
-
+        # Set entry price for standard LMT order. Adaptive logic removed to enforce bracket-only orders.
+        logger.info("Using standard LMT order for entry.")
+        parent_order.lmtPrice = self._round_to_tick_size(option_price, entry_tick_size)
 
         # 8. Create Bracket Orders
         bracket = self._create_bracket_orders(

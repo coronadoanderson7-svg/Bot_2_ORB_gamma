@@ -266,8 +266,7 @@ class IBProvider(BaseGexProvider):
         logger.info(f"Collecting streaming data for {num_requests} requests...")
         start_time = datetime.now()
         
-        # Use a configurable timeout. Default to 5 seconds for streaming, which is usually very fast.
-        timeout_seconds = self.config.gex.batch_timeout_seconds if hasattr(self.config.gex, 'batch_timeout_seconds') else 15
+        timeout_seconds = self.config.gex.batch_timeout_seconds
 
         # A set of request IDs for which we are still waiting for data.
         pending_req_ids = set(req_id_map.keys())

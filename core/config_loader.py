@@ -70,6 +70,7 @@ class GEXConfig(BaseModel):
     provider_type: int
     batch_size: int = Field(default=20, gt=0)
     batch_pause_seconds: int = Field(default=1, ge=0)
+    batch_timeout_seconds: int = Field(default=15, gt=0)
     providers: ProvidersConfig
 
 class OrderDefaultsConfig(BaseModel):
