@@ -116,13 +116,13 @@ class OrderManager:
                     logger.error(f"Failed to fetch market price for {contract.localSymbol} after {max_retries} attempts.")
                     return None
 
-            # Prioritize which price to use.
-            price = market_data.get('ask')
+            # Prioritize which price to use. Use 'last' for liquid SPX to avoid aggressive pricing.
+            price = market_data.get('last')
             if price is None or price <= 0:
-                logger.warning(f"'ask' price not available for {contract.localSymbol}. Falling back to 'last'.")
-                price = market_data.get('last')
+                logger.warning(f"'last' price not available for {contract.localSymbol}. Falling back to 'ask'.")
+                price = market_data.get('ask')
             if price is None or price <= 0:
-                logger.warning(f"'last' price not available for {contract.localSymbol}. Falling back to 'close'.")
+                logger.warning(f"'ask' price not available for {contract.localSymbol}. Falling back to 'close'.")
                 price = market_data.get('close')
 
             if price and price > 0:
