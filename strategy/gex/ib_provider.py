@@ -236,6 +236,7 @@ class IBProvider(BaseGexProvider):
                 contract.exchange = self.config.instrument.exchange
                 contract.currency = self.config.instrument.currency
                 contract.lastTradeDateOrContractMonth = expiration
+                contract.tradingClass = "SPXW"
                 contract.strike = strike
                 contract.right = right
                 contract.multiplier = str(self.config.gex.option_multiplier)
