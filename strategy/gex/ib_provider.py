@@ -93,25 +93,54 @@ class IBProvider(BaseGexProvider):
                 
                 batch_start_index = i * batch_size
                 batch_end_index = batch_start_index + batch_size
-                contract_batch = all_option_contracts[batch_start_index:batch_end_index]
+                current_batch_contracts = all_option_contracts[batch_start_index:batch_end_index]
 
-                # 5a. Request streaming data for the current batch
-                batch_req_id_map, batch_data_aggregator = self._request_market_data(ib_connector, contract_batch)
-                if not batch_req_id_map:
-                    logger.warning(f"Failed to request data for batch {batch_num}. Skipping.")
-                    continue
+                max_retries = 2
+                retry_count = 0
                 
-                # 5b. Collect streaming data for the current batch
-                self._collect_market_data(ib_connector, batch_req_id_map, batch_data_aggregator)
-                
-                # 5c. Cancel market data streams to free up data lines
-                logger.debug(f"Cancelling {len(batch_req_id_map)} market data streams for batch {batch_num}.")
-                for req_id in batch_req_id_map.keys():
-                    ib_connector.cancel_market_data(req_id)
+                while retry_count <= max_retries and current_batch_contracts:
+                    if retry_count > 0:
+                        # Exponential backoff pause
+                        delay = self.config.gex.batch_pause_seconds * (2 ** (retry_count - 1))
+                        logger.info(f"Retrying {len(current_batch_contracts)} incomplete contracts (Attempt {retry_count}/{max_retries}) after {delay}s delay...")
+                        time.sleep(delay)
 
-                # 5d. Merge batch results into master aggregators
-                master_req_id_map.update(batch_req_id_map)
-                master_data_aggregator.update(batch_data_aggregator)
+                    # 5a. Request streaming data for the current batch
+                    batch_req_id_map, batch_data_aggregator = self._request_market_data(ib_connector, current_batch_contracts)
+                    if not batch_req_id_map:
+                        logger.warning(f"Failed to request data for batch {batch_num}, retry {retry_count}. Skipping.")
+                        break
+                    
+                    # 5b. Collect streaming data for the current batch
+                    self._collect_market_data(ib_connector, batch_req_id_map, batch_data_aggregator)
+                    
+                    # 5c. Cancel market data streams to free up data lines
+                    logger.debug(f"Cancelling {len(batch_req_id_map)} market data streams for batch {batch_num}.")
+                    for req_id in batch_req_id_map.keys():
+                        ib_connector.cancel_market_data(req_id)
+
+                    # Filter successful and failed contracts
+                    successful_req_id_map = {}
+                    successful_data_aggregator = {}
+                    failed_contracts = []
+
+                    for req_id, data in batch_data_aggregator.items():
+                        if data["gamma"] is not None and data["oi"] is not None and data["volume"] is not None:
+                            successful_req_id_map[req_id] = batch_req_id_map[req_id]
+                            successful_data_aggregator[req_id] = data
+                        else:
+                            failed_contracts.append(batch_req_id_map[req_id]["contract"])
+
+                    # 5d. Merge batch results into master aggregators
+                    master_req_id_map.update(successful_req_id_map)
+                    master_data_aggregator.update(successful_data_aggregator)
+                    
+                    # Update for next iteration
+                    current_batch_contracts = failed_contracts
+                    retry_count += 1
+                    
+                if current_batch_contracts:
+                     logger.warning(f"Failed to collect complete data for {len(current_batch_contracts)} contracts after {max_retries} retries in batch {batch_num}.")
 
                 # 5e. Pause between batches
                 if batch_num < num_batches:
