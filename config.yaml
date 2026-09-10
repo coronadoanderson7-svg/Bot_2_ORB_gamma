@@ -78,7 +78,7 @@ trade_execution:
 # Trade Management
 # ==============================================================================
 trade_management:
-  take_profit_pct: 20
+  take_profit_pct: 30
   stop_loss_pct: 35
   trailing_stop:
     activation_profit_pct: 10
